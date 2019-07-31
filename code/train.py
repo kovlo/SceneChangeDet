@@ -15,7 +15,7 @@ import shutil
 import cv2
 
 ### options = ['TSUNAMI','GSV','CMU','CD2014']
-datasets = 'TSUNAMI'
+datasets = 'CD2014'
 if datasets == 'TSUNAMI':
     import cfgs.TSUNAMIconfig as cfg
     import dataset.TSUNAMI as dates
@@ -29,7 +29,7 @@ if datasets == 'CD2014':
     import cfgs.CD2014config as cfg
     import dataset.CD2014 as dates
 
-resume = 0
+resume = 1
 
 def check_dir(dir):
     if not os.path.exists(dir):
@@ -85,7 +85,7 @@ def various_distance(out_vec_t0, out_vec_t1,dist_flag):
     return distance
 
 def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,epoch,filename,layer_flag,dist_flag):
-
+    valid_path='/home/z/PycharmProjects/dataset_/save_path/prediction/contrastive_loss/valid_imgs/'
     interp = nn.Upsample(size=[cfg.TRANSFROM_SCALES[1],cfg.TRANSFROM_SCALES[0]], mode='bilinear')
     n, c, h, w = output_t0.data.shape
     out_t0_rz = torch.transpose(output_t0.view(c, h * w), 1, 0)
@@ -94,12 +94,22 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
     similar_distance_map = distance.view(h,w).data.cpu().numpy()
     similar_distance_map_rz = interp(Variable(torch.from_numpy(similar_distance_map[np.newaxis, np.newaxis, :])))
     similar_dis_map_colorize = cv2.applyColorMap(np.uint8(255 * similar_distance_map_rz.data.cpu().numpy()[0][0]), cv2.COLORMAP_JET)
+
     save_change_map_dir_ = os.path.join(save_change_map_dir, 'epoch_' + str(epoch))
     check_dir(save_change_map_dir_)
     save_change_map_dir_layer = os.path.join(save_change_map_dir_,layer_flag)
     check_dir(save_change_map_dir_layer)
-    save_weight_fig_dir = os.path.join(save_change_map_dir_layer, filename + '.jpg')
+    save_weight_fig_dir = os.path.join(save_change_map_dir_layer, str(filename).split('/')[-1] + '.jpg')
+
+
+    real_file_name=os.path.join('/home/z/PycharmProjects/dataset_/cd2014/dataset/',filename)
+
     cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
+    shutil.copy(real_file_name,valid_path+'/'+str(filename).split('/')[-1])
+    print "dealed"+filename
+    # cv2.imshow(filename,similar_dis_map_colorize)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
     return similar_distance_map_rz.data.cpu().numpy()
 
 def validate(net, val_dataloader,epoch,save_change_map_dir,save_roc_dir):
@@ -163,7 +173,7 @@ def validate(net, val_dataloader,epoch,save_change_map_dir,save_roc_dir):
         mc.plotPrecisionRecall(pr, recall, roc_save_dir, benchmark_pr=None)
         f_score_total += f_score
 
-    print f_score_total/(len(conds))
+    print (f_score_total/(len(conds)))
     return f_score_total/len(conds)
 
 def main():
@@ -258,7 +268,7 @@ def main():
                 print("Epoch [%d/%d] Loss: %.4f Mask_Loss_conv5: %.4f Mask_Loss_fc: %.4f "
                       "Mask_Loss_embedding: %.4f" % (epoch, batch_idx,loss.data[0],contractive_loss_conv5.data[0],
                                                      contractive_loss_fc.data[0],contractive_loss_embedding.data[0]))
-             if (batch_idx) % 1000 == 0:
+             if (batch_idx) % 300 == 0:
                  model.eval()
                  current_metric = validate(model, val_loader, epoch,save_change_map_dir,save_roc_dir)
                  if current_metric > best_metric:
@@ -278,5 +288,64 @@ def main():
           torch.save({'state_dict': model.state_dict()},
                        os.path.join(ab_test_dir, 'model' + str(epoch) + '.pth'))
 
+
+
+def test_main():
+
+  #########  configs ###########
+
+  val_transform_det = trans.Compose([
+      trans.Scale(cfg.TRANSFROM_SCALES),
+  ])
+
+  val_data = dates.Dataset(cfg.VAL_DATA_PATH,cfg.VAL_LABEL_PATH,
+                            cfg.VAL_TXT_PATH,'val',transform=True,
+                            transform_med = val_transform_det)
+  val_loader = Data.DataLoader(val_data, batch_size= cfg.BATCH_SIZE,
+                                shuffle= False, num_workers= 4, pin_memory= True)
+  ######  build  models ########
+  base_seg_model = 'deeplab'
+  if base_seg_model == 'deeplab':
+      import model.siameseNet.deeplab_v2 as models
+      pretrain_deeplab_path = os.path.join(cfg.PRETRAIN_MODEL_PATH, 'deeplab_v2_voc12.pth')
+      model = models.SiameseNet(norm_flag='l2')
+      if resume:
+          checkpoint = torch.load(cfg.TRAINED_BEST_PERFORMANCE_CKPT)
+          model.load_state_dict(checkpoint['state_dict'])
+          print('resume success')
+      else:
+          deeplab_pretrain_model = torch.load(pretrain_deeplab_path)
+          model.init_parameters_from_deeplab(deeplab_pretrain_model)
+  else:
+      import model.siameseNet.fcn32s_tiny as models
+      pretrain_vgg_path = os.path.join(cfg.PRETRAIN_MODEL_PATH,'vgg16_from_caffe.pth')
+      model = models.SiameseNet(distance_flag='softmax')
+      if resume:
+          checkpoint = torch.load(cfg.TRAINED_BEST_PERFORMANCE_CKPT)
+          model.load_state_dict(checkpoint['state_dict'])
+          print('resume success')
+      else:
+          vgg_pretrain_model = util.load_pretrain_model(pretrain_vgg_path)
+          model.init_parameters(vgg_pretrain_model)
+
+  model = model.cuda()
+  MaskLoss = ls.ConstractiveMaskLoss()
+  ab_test_dir = os.path.join(cfg.SAVE_PRED_PATH,'contrastive_loss')
+  check_dir(ab_test_dir)
+  save_change_map_dir = os.path.join(ab_test_dir, 'changemaps/')
+  save_valid_dir = os.path.join(ab_test_dir,'valid_imgs')
+  save_roc_dir = os.path.join(ab_test_dir,'roc')
+  check_dir(save_change_map_dir),check_dir(save_valid_dir),check_dir(save_roc_dir)
+  #########
+  ######### optimizer ##########
+  ######## how to set different learning rate for differernt layers #########
+
+  ######## iter img_label pairs ###########
+  loss_total = 0
+  for epoch in range(1):
+      current_metric = validate(model, val_loader, epoch,save_change_map_dir,save_roc_dir)
+
+
 if __name__ == '__main__':
-   main()
+   # main()
+    test_main()
