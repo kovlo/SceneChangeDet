@@ -84,6 +84,29 @@ def various_distance(out_vec_t0, out_vec_t1,dist_flag):
         distance = 1 - F.cosine_similarity(out_vec_t0, out_vec_t1)
     return distance
 
+def single_layer_similar_heatmap_visual_(output_t0,output_t1,save_change_map_dir,epoch,filename,layer_flag,dist_flag):
+    valid_path='/home/z/PycharmProjects/dataset_/save_path/prediction/contrastive_loss/valid_imgs/'
+    interp = nn.Upsample(size=[cfg.TRANSFROM_SCALES[1],cfg.TRANSFROM_SCALES[0]], mode='bilinear')
+    n, c, h, w = output_t0.data.shape
+    out_t0_rz = torch.transpose(output_t0.view(c, h * w), 1, 0)
+    out_t1_rz = torch.transpose(output_t1.view(c, h * w), 1, 0)
+    distance = various_distance(out_t0_rz,out_t1_rz,dist_flag=dist_flag)
+    similar_distance_map = distance.view(h,w).data.cpu().numpy()
+    similar_distance_map_rz = interp(Variable(torch.from_numpy(similar_distance_map[np.newaxis, np.newaxis, :])))
+    similar_dis_map_colorize = cv2.applyColorMap(np.uint8(255 * similar_distance_map_rz.data.cpu().numpy()[0][0]), cv2.COLORMAP_JET)
+    save_change_map_dir_ = os.path.join(save_change_map_dir, 'epoch_' + str(epoch))
+    check_dir(save_change_map_dir_)
+    save_change_map_dir_layer = os.path.join(save_change_map_dir_,layer_flag)
+    check_dir(save_change_map_dir_layer)
+    save_weight_fig_dir = os.path.join(save_change_map_dir_layer, str(filename).split('/')[-1] + '.jpg')
+    real_file_name=os.path.join('/home/z/PycharmProjects/dataset_/cd2014/dataset/',filename)
+    cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
+    shutil.copy(real_file_name,valid_path+'/'+str(filename).split('/')[-1])
+    print "dealed"+filename
+    # cv2.imshow(filename,similar_dis_map_colorize)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    return similar_distance_map_rz.data.cpu().numpy()
 def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,epoch,filename,layer_flag,dist_flag):
     valid_path='/home/z/PycharmProjects/dataset_/save_path/prediction/contrastive_loss/valid_imgs/'
     interp = nn.Upsample(size=[cfg.TRANSFROM_SCALES[1],cfg.TRANSFROM_SCALES[0]], mode='bilinear')
@@ -94,18 +117,14 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
     similar_distance_map = distance.view(h,w).data.cpu().numpy()
     similar_distance_map_rz = interp(Variable(torch.from_numpy(similar_distance_map[np.newaxis, np.newaxis, :])))
     similar_dis_map_colorize = cv2.applyColorMap(np.uint8(255 * similar_distance_map_rz.data.cpu().numpy()[0][0]), cv2.COLORMAP_JET)
-
     save_change_map_dir_ = os.path.join(save_change_map_dir, 'epoch_' + str(epoch))
     check_dir(save_change_map_dir_)
     save_change_map_dir_layer = os.path.join(save_change_map_dir_,layer_flag)
     check_dir(save_change_map_dir_layer)
     save_weight_fig_dir = os.path.join(save_change_map_dir_layer, str(filename).split('/')[-1] + '.jpg')
-
-
     real_file_name=os.path.join('/home/z/PycharmProjects/dataset_/cd2014/dataset/',filename)
-
     cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
-    shutil.copy(real_file_name,valid_path+'/'+str(filename).split('/')[-1])
+    # shutil.copy(real_file_name,valid_path+'/'+str(filename).split('/')[-1])
     print "dealed"+filename
     # cv2.imshow(filename,similar_dis_map_colorize)
     # cv2.waitKey(0)
@@ -268,7 +287,7 @@ def main():
                 print("Epoch [%d/%d] Loss: %.4f Mask_Loss_conv5: %.4f Mask_Loss_fc: %.4f "
                       "Mask_Loss_embedding: %.4f" % (epoch, batch_idx,loss.data[0],contractive_loss_conv5.data[0],
                                                      contractive_loss_fc.data[0],contractive_loss_embedding.data[0]))
-             if (batch_idx) % 300 == 0:
+             if (batch_idx) % 1000 == 1:
                  model.eval()
                  current_metric = validate(model, val_loader, epoch,save_change_map_dir,save_roc_dir)
                  if current_metric > best_metric:
@@ -347,5 +366,5 @@ def test_main():
 
 
 if __name__ == '__main__':
-   # main()
-    test_main()
+   main()
+   #  test_main()
