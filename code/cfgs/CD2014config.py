@@ -1,8 +1,8 @@
 import os
 
-BASE_PATH = '/home/admin228/Projects/pytorch/cd_newbranch'
+BASE_PATH = '/home/lorant/Projects/data/cikk1'
 PRETRAIN_MODEL_PATH = os.path.join(BASE_PATH,'pretrain')
-DATA_PATH = '/media/admin228/0007A0C30005763A/datasets/dataset_/CD2014'
+DATA_PATH = '/home/lorant/Projects/data/cikk1/cd2014'
 TRAIN_DATA_PATH = os.path.join(DATA_PATH,'dataset')
 TRAIN_LABEL_PATH = os.path.join(DATA_PATH,'dataset')
 TRAIN_TXT_PATH = os.path.join(DATA_PATH,'train.txt')
@@ -11,7 +11,7 @@ VAL_LABEL_PATH = os.path.join(DATA_PATH,'dataset')
 VAL_TXT_PATH = os.path.join(DATA_PATH,'val.txt')
 TEST_DATA_PATH = os.path.join(DATA_PATH,'dataset')
 TEST_TXT_PATH = os.path.join(DATA_PATH,'val.txt')
-SAVE_PATH = '/media/admin228/00027E210001A5BD/train_pytorch/change_detection/CD2014'
+SAVE_PATH ='/home/lorant/Projects/data/cikk1/cdtrainoutput'
 if not os.path.exists(SAVE_PATH):
     os.mkdir(SAVE_PATH)
 SAVE_CKPT_PATH = os.path.join(SAVE_PATH,'ckpt')
