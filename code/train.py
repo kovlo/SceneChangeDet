@@ -15,7 +15,7 @@ import shutil
 import cv2
 
 ### options = ['TSUNAMI','GSV','CMU','CD2014']
-datasets = 'TSUNAMI'
+datasets = 'CD2014'
 if datasets == 'TSUNAMI':
     import cfgs.TSUNAMIconfig as cfg
     import dataset.TSUNAMI as dates
@@ -29,7 +29,7 @@ if datasets == 'CD2014':
     import cfgs.CD2014config as cfg
     import dataset.CD2014 as dates
 
-resume = 0
+resume = 1
 
 def check_dir(dir):
     if not os.path.exists(dir):
@@ -258,7 +258,7 @@ def main():
                 print("Epoch [%d/%d] Loss: %.4f Mask_Loss_conv5: %.4f Mask_Loss_fc: %.4f "
                       "Mask_Loss_embedding: %.4f" % (epoch, batch_idx,loss.data[0],contractive_loss_conv5.data[0],
                                                      contractive_loss_fc.data[0],contractive_loss_embedding.data[0]))
-             if (batch_idx) % 1000 == 0:
+             if (batch_idx) % 680 == 0:
                  model.eval()
                  current_metric = validate(model, val_loader, epoch,save_change_map_dir,save_roc_dir)
                  if current_metric > best_metric:
