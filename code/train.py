@@ -151,6 +151,7 @@ def validate(net, val_dataloader,epoch,save_change_map_dir,save_roc_dir):
         metric_for_conditions[cond_name].setdefault('contrast_embedding',cont_embedding_mean)
 
     f_score_total = 0.0
+    '''
     for cond_name in conds:
         pr, recall,f_score = metric_for_conditions[cond_name]['metric']['precision'], metric_for_conditions[cond_name]['metric']['recall'],metric_for_conditions[cond_name]['metric']['MaxF']
         roc_save_epoch_dir = os.path.join(save_roc_dir, str(epoch))
@@ -164,6 +165,7 @@ def validate(net, val_dataloader,epoch,save_change_map_dir,save_roc_dir):
         f_score_total += f_score
 
     print f_score_total/(len(conds))
+    '''
     return f_score_total/len(conds)
 
 def main():
