@@ -10,3 +10,4 @@ pip install torch-0.2.0.post3-cp27-cp27mu-manylinux1_x86_64.whl
 pip install torchvision==0.2.2
 pip install opencv-python==4.2.0.32
 pip install matplotlib
+pip install scipy
