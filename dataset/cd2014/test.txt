@@ -1,0 +1,10 @@
+thermal/lakeSide/t0/in001000.jpg thermal/lakeSide/t1/in002281.jpg thermal/lakeSide/gt_binary/gt002281.png
+shadow/cubicle/t0/in001100.jpg shadow/cubicle/t1/in005785.jpg shadow/cubicle/gt_binary/gt005785.png
+shadow/copyMachine/t0/in002370.jpg shadow/copyMachine/t1/in002601.jpg shadow/copyMachine/gt_binary/gt002601.png
+turbulence/turbulence1/t0/in001200.jpg turbulence/turbulence1/t1/in002172.jpg turbulence/turbulence1/gt_binary/gt002172.png
+intermittentObjectMotion/parking/t0/in001000.jpg intermittentObjectMotion/parking/t1/in001541.jpg intermittentObjectMotion/parking/gt_binary/gt001541.png
+shadow/copyMachine/t0/in002370.jpg shadow/copyMachine/t1/in001101.jpg shadow/copyMachine/gt_binary/gt001101.png
+badWeather/blizzard/t0/in000001.jpg badWeather/blizzard/t1/in003005.jpg badWeather/blizzard/gt_binary/gt003005.png
+turbulence/turbulence1/t0/in001200.jpg turbulence/turbulence1/t1/in002190.jpg turbulence/turbulence1/gt_binary/gt002190.png
+thermal/library/t0/in000600.jpg thermal/library/t1/in002031.jpg thermal/library/gt_binary/gt002031.png
+shadow/copyMachine/t0/in002370.jpg shadow/copyMachine/t1/in001859.jpg shadow/copyMachine/gt_binary/gt001859.png
