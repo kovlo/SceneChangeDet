@@ -1,5 +1,5 @@
-conda create --name cikk12 python=2
-conda activate cikk12
+conda create --name cikk1 python=2
+conda activate cikk1
 
 pip install --upgrade pip
 pip install --upgrade Pillow
