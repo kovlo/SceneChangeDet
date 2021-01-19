@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from numpy.core.fromnumeric import resize
 import torch
 import torch.nn as nn
 import torchvision
@@ -124,6 +125,26 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
     save_weight_fig_dir = os.path.join(save_change_map_dir_layer, str(filename).split('/')[-1] + '.jpg')
     real_file_name=os.path.join('/home/lorant/Projects/data/SceneChangeDet/cd2014/dataset/',filename)
     cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
+
+    if (layer_flag=="conv5"):
+        print(filename)
+        t0dir = os.path.join(cfg.VAL_DATA_PATH,str(filename).split('/')[0],str(filename).split('/')[1],'t0')
+        t0jpgname= os.listdir(t0dir)[0]
+        t0img = cv2.imread(os.path.join(t0dir,t0jpgname))
+        t1img = cv2.imread(os.path.join(cfg.VAL_DATA_PATH,filename))
+
+        gtdir = os.path.join(cfg.VAL_DATA_PATH,str(filename).split('/')[0],str(filename).split('/')[1],'gt_binary')
+        gtname = (str(filename).split('/')[-1]).replace('jpg','png').replace('in','gt')
+        gtimg = cv2.imread(os.path.join(gtdir,gtname))
+
+        predimg = cv2.resize(similar_dis_map_colorize,(t0img.shape[1],t0img.shape[0]))
+
+        saveimg=np.hstack((t0img,t1img))
+        saveimg=np.vstack((saveimg,np.hstack((gtimg*255, predimg))))
+        cv2.imwrite(os.path.join(valid_path,str(filename).split('/')[0]+"-"+str(filename).split('/')[1]+"-"+str(filename).split('/')[-1].replace("jpg","png")),saveimg)
+
+    #shutil.copy(real_file_name,valid_path+'/'+str(filename).split('/')[-1])
+    #print "dealed"+filename
     # cv2.imshow(filename,similar_dis_map_colorize)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
@@ -315,6 +336,8 @@ def test_main():
       trans.Scale(cfg.TRANSFROM_SCALES),
   ])
 
+  TEST_TXT_PATH= '/home/lorant/Projects/data/SceneChangeDet/cd2014/test.txt'
+
   val_data = dates.Dataset(cfg.VAL_DATA_PATH,cfg.VAL_LABEL_PATH,
                             cfg.VAL_TXT_PATH,'val',transform=True,
                             transform_med = val_transform_det)
@@ -364,5 +387,5 @@ def test_main():
 
 
 if __name__ == '__main__':
-   main()
-   #  test_main()
+   #main()
+   test_main()
