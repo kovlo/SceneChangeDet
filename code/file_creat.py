@@ -1,7 +1,7 @@
 import glob
 import os
 
-base_path='/home/z/PycharmProjects/dataset_/TSUNAMI/'
+base_path='/home/lorant/Projects/data/SceneChangeDet/TSUNAMI/'
 # path1=base_path+'/t0/*.jpg'
 # all_path1=glob.glob(path1)
 # path2=base_path+'/t1/*.jpg'
@@ -16,7 +16,7 @@ def read_file(base_path,step_path,file_tpye):
 
 t0=read_file(base_path,'t0','jpg')
 t1=read_file(base_path,'t1','jpg')
-gt=read_file(base_path,'ground_truth','bmp')
+gt=read_file(base_path,'ground_truth/bmp','bmp')
 
 with open('1.txt' ,'a') as f:
     for i in range(len(t0)):
