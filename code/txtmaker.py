@@ -14,6 +14,7 @@ image_sizeH = 128
 
 rootdir = Path('/home/lorant/Projects/data/ChangeNet/combined/train')
 outdirTr = Path('/home/lorant/Projects/data/ChangeNet/combined/train_sep')
+check_dir(outdirTr)
 t0dirTr = outdirTr/"t0"
 t1dirTr = outdirTr/"t1"
 gtdirTr = outdirTr/"gt_binary"
@@ -22,6 +23,7 @@ check_dir(t1dirTr)
 check_dir(gtdirTr)
 
 outdirVal = Path('/home/lorant/Projects/data/ChangeNet/combined/val_sep')
+check_dir(outdirVal)
 t0dirVal = outdirVal/"t0"
 t1dirVal = outdirVal/"t1"
 gtdirVal = outdirVal/"gt_binary"
@@ -29,8 +31,8 @@ check_dir(t0dirVal)
 check_dir(t1dirVal)
 check_dir(gtdirVal)
 
-traintxt = 'trainCD.txt'
-valtxt  = 'valCD.txt'
+traintxt = '/home/lorant/Projects/data/ChangeNet/combined/trainCD.txt'
+valtxt  = '/home/lorant/Projects/data/ChangeNet/combined/valCD.txt'
 
 with open(traintxt, 'w') as tr, open(valtxt, 'w') as vl:
 
@@ -38,7 +40,7 @@ with open(traintxt, 'w') as tr, open(valtxt, 'w') as vl:
     images.sort()
     print(len(images))
 
-    for gtimname in images:
+    for gtimname in images[0:200]:
         if random.random()<0.8:
             f=tr
             t0dir = t0dirTr
@@ -56,7 +58,7 @@ with open(traintxt, 'w') as tr, open(valtxt, 'w') as vl:
         test_img = trio_img[image_sizeH:2*image_sizeH,:]/1000/42.42*255
         test_img = np.tile(test_img[:,:,np.newaxis],(1,1,3))
         label_img = (trio_img[image_sizeH*2:,:]>0)*255
-        label_img = np.tile(label_img[:,:,np.newaxis],(1,1,3))
+        #label_img = np.tile(label_img[:,:,np.newaxis],(1,1,3))
 
         refpath   = str(t0dir/gtimname)
         testpath  = str(t1dir/gtimname)
@@ -75,9 +77,10 @@ with open(traintxt, 'w') as tr, open(valtxt, 'w') as vl:
 print('Done!')
 
 ## Test txt
-testtxt = 'testCD.txt'
+testtxt = '/home/lorant/Projects/data/ChangeNet/combined/testCD.txt'
 rootdir = Path('/home/lorant/Projects/data/ChangeNet/combined/test')
 outdir = Path('/home/lorant/Projects/data/ChangeNet/combined/test_sep')
+check_dir(outdir)
 t0dir = outdir/"t0"
 t1dir = outdir/"t1"
 gtdir = outdir/"gt_binary"
@@ -100,7 +103,7 @@ with open(testtxt, 'w') as tst:
         test_img = trio_img[image_sizeH:2*image_sizeH,:]/1000/42.42*255
         test_img = np.tile(test_img[:,:,np.newaxis],(1,1,3))
         label_img = (trio_img[image_sizeH*2:,:]>0)*255
-        label_img = np.tile(label_img[:,:,np.newaxis],(1,1,3))
+        #label_img = np.tile(label_img[:,:,np.newaxis],(1,1,3))
 
         refpath   = str(t0dir/gtimname)
         testpath  = str(t1dir/gtimname)
