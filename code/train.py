@@ -14,6 +14,7 @@ import layer.loss as ls
 import utils.metric as mc
 import shutil
 import cv2
+from datetime import datetime
 
 ### options = ['TSUNAMI','GSV','CMU','CD2014']
 datasets = 'CD2014'
@@ -124,9 +125,9 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
     check_dir(save_change_map_dir_layer)
     save_weight_fig_dir = os.path.join(save_change_map_dir_layer, str(filename).split('/')[-1] + '.jpg')
     real_file_name=os.path.join('/home/lorant/Projects/data/SceneChangeDet/cd2014/dataset/',filename)
-    cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
 
-    if (layer_flag=="conv5"):
+    if False:#(layer_flag=="conv5"):
+        cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
         print(filename)
         t0dir = os.path.join(cfg.VAL_DATA_PATH,str(filename).split('/')[0],str(filename).split('/')[1],'t0')
         t0jpgname= os.listdir(t0dir)[0]
@@ -260,7 +261,10 @@ def main():
           vgg_pretrain_model = util.load_pretrain_model(pretrain_vgg_path)
           model.init_parameters(vgg_pretrain_model)
 
+  t1 = datetime.now()
+  print("Model loading start at "+str(t1))
   model = model.cuda()
+  print("Model loaded in "+str(datetime.now() - t1))
   MaskLoss = ls.ConstractiveMaskLoss()
   ab_test_dir = os.path.join(cfg.SAVE_PRED_PATH,'contrastive_loss')
   check_dir(ab_test_dir)
@@ -340,6 +344,9 @@ def test_main():
 
   val_data = dates.Dataset(cfg.VAL_DATA_PATH,cfg.VAL_LABEL_PATH,
                             cfg.VAL_TXT_PATH,'val',transform=True,
+                            transform_med = val_transform_det)
+  val_data = dates.Dataset(cfg.TEST_DATA_PATH,cfg.TEST_LABEL_PATH,
+                            cfg.TEST_TXT_PATH,'val',transform=True,
                             transform_med = val_transform_det)
   val_loader = Data.DataLoader(val_data, batch_size= cfg.BATCH_SIZE,
                                 shuffle= False, num_workers= 4, pin_memory= True)
