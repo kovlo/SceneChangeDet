@@ -3,16 +3,17 @@ import os
 BASE_PATH = '/home/lorant/Projects/data/SceneChangeDet'
 PRETRAIN_MODEL_PATH = os.path.join(BASE_PATH,'pretrain')
 # DATA_PATH = '/media/admin228/0007A0C30005763A/datasets/dataset_/CD2014'
-DATA_PATH = '/home/lorant/Projects/data/SceneChangeDet/cd2014'
-TRAIN_DATA_PATH = os.path.join(DATA_PATH,'dataset')
-TRAIN_LABEL_PATH = os.path.join(DATA_PATH,'dataset')
-TRAIN_TXT_PATH = os.path.join(DATA_PATH,'train.txt')
-VAL_DATA_PATH = os.path.join(DATA_PATH,'dataset')
-VAL_LABEL_PATH = os.path.join(DATA_PATH,'dataset')
-VAL_TXT_PATH = os.path.join(DATA_PATH,'val.txt')
-TEST_DATA_PATH = os.path.join(DATA_PATH,'dataset')
-TEST_TXT_PATH = os.path.join(DATA_PATH,'val.txt')
-SAVE_PATH ='/home/lorant/Projects/data/SceneChangeDet/cdtrainoutput'
+DATA_PATH = '/home/lorant/Projects/data/ChangeNet/combined'
+TRAIN_DATA_PATH = os.path.join(DATA_PATH,'')
+TRAIN_LABEL_PATH = os.path.join(DATA_PATH,'')
+TRAIN_TXT_PATH = os.path.join(DATA_PATH,'trainCD.txt')
+VAL_DATA_PATH = os.path.join(DATA_PATH,'')
+VAL_LABEL_PATH = os.path.join(DATA_PATH,'')
+VAL_TXT_PATH = os.path.join(DATA_PATH,'valCD.txt')
+TEST_DATA_PATH = os.path.join(DATA_PATH,'')
+TEST_LABEL_PATH = os.path.join(DATA_PATH,'')
+TEST_TXT_PATH = os.path.join(DATA_PATH,'testCD.txt')
+SAVE_PATH ='/home/lorant/Projects/data/SceneChangeDet/trainoutputCD'
 if not os.path.exists(SAVE_PATH):
     os.mkdir(SAVE_PATH)
 SAVE_CKPT_PATH = os.path.join(SAVE_PATH,'ckpt')
@@ -33,7 +34,8 @@ THRESHS = [0.1,0.3,0.5]
 LOSS_PARAM_CONV = 3
 LOSS_PARAM_FC = 3
 # TRANSFROM_SCALES= (512,512)
-TRANSFROM_SCALES= (570,340)
+# TRANSFROM_SCALES = (w,h)
+TRANSFROM_SCALES= (1024,128)
 T0_MEAN_VALUE = (107.800,117.692,119.979)
 T1_MEAN_VALUE = (110.655,117.107,119.135)
     
