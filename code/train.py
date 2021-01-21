@@ -130,7 +130,9 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
     save_weight_fig_dir = os.path.join(save_change_map_dir_layer, str(filename).split('/')[-1] + '.jpg')
     real_file_name=os.path.join('/home/lorant/Projects/data/SceneChangeDet/cd2014/dataset/',filename)
 
-    if (layer_flag=="conv5"):
+    #CD2014 data
+    """
+    if (layer_flag=="embedding"):
         cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
         print(filename)
         t0dir = os.path.join(cfg.VAL_DATA_PATH,str(filename).split('/')[0],str(filename).split('/')[1],'t0')
@@ -147,6 +149,21 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
         saveimg=np.hstack((t0img,t1img))
         saveimg=np.vstack((saveimg,np.hstack((gtimg*255, predimg))))
         cv2.imwrite(os.path.join(save_change_map_dir_,str(filename).split('/')[0]+"-"+str(filename).split('/')[1]+"-"+str(filename).split('/')[-1].replace("jpg","png")),saveimg)
+    """
+    #Own data
+    if (layer_flag=="embedding"):
+        cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
+        print(filename)
+        t0img = cv2.imread(os.path.join(cfg.VAL_DATA_PATH,filename.replace('t0',"t1")))
+        t1img = cv2.imread(os.path.join(cfg.VAL_DATA_PATH,filename))
+        gtimg = cv2.imread(os.path.join(cfg.VAL_DATA_PATH,filename.replace('t1',"gt_binary")),cv2.IMREAD_UNCHANGED)
+        gtimg = np.tile(gtimg[:,:,np.newaxis],(1,1,3))
+
+        predimg = cv2.resize(similar_dis_map_colorize,(t0img.shape[1],t0img.shape[0]))
+
+        saveimg=np.hstack((t0img,t1img))
+        saveimg=np.vstack((saveimg,np.hstack((gtimg, predimg))))
+        cv2.imwrite(os.path.join(save_change_map_dir_,str(filename).split('/')[0]+"-"+str(filename).split('/')[1]+"-"+str(filename).split('/')[-1]),saveimg)
 
     #shutil.copy(real_file_name,valid_path+'/'+str(filename).split('/')[-1])
     #print "dealed"+filename
@@ -316,6 +333,8 @@ def main():
              contractive_loss_fc = MaskLoss(out_fc_t0,out_fc_t1,label_rz_fc)
              contractive_loss_embedding = MaskLoss(out_embedding_t0,out_embedding_t1,label_rz_embedding)
              loss = contractive_loss_conv5 + contractive_loss_fc + contractive_loss_embedding
+             #a=util.resize_label(label.data.cpu().numpy(),size=out_embedding_t0.data.cpu().numpy().shape[2:])
+             #plt.imshow(a[0,:,:].numpy())
              loss_total += loss.data.cpu()
              optimizer.zero_grad()
              loss.backward()
@@ -380,6 +399,8 @@ def test_main():
                             transform_med = val_transform_det)
   val_loader = Data.DataLoader(val_data, batch_size= cfg.BATCH_SIZE,
                                 shuffle= False, num_workers= 4, pin_memory= True)
+  t1 = datetime.now()
+  print("Model loading start at "+str(t1))
   ######  build  models ########
   base_seg_model = 'deeplab'
   if base_seg_model == 'deeplab':
@@ -406,6 +427,7 @@ def test_main():
           model.init_parameters(vgg_pretrain_model)
 
   model = model.cuda()
+  print("Model loaded in "+str(datetime.now() - t1))
   MaskLoss = ls.ConstractiveMaskLoss()
   ab_test_dir = os.path.join(cfg.SAVE_PRED_PATH,'contrastive_loss')
   check_dir(ab_test_dir)
