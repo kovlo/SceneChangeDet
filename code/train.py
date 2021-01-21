@@ -15,6 +15,7 @@ import utils.metric as mc
 import shutil
 import cv2
 from datetime import datetime
+from tensorboardX import SummaryWriter
 
 ### options = ['TSUNAMI','GSV','CMU','CD2014']
 datasets = 'CD2014'
@@ -32,6 +33,7 @@ if datasets == 'CD2014':
     import dataset.CD2014 as dates
 
 resume = 1
+trainEpochCount=5
 
 def check_dir(dir):
     if not os.path.exists(dir):
@@ -119,14 +121,16 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
     similar_distance_map = distance.view(h,w).data.cpu().numpy()
     similar_distance_map_rz = interp(Variable(torch.from_numpy(similar_distance_map[np.newaxis, np.newaxis, :])))
     similar_dis_map_colorize = cv2.applyColorMap(np.uint8(255 * similar_distance_map_rz.data.cpu().numpy()[0][0]), cv2.COLORMAP_JET)
-    save_change_map_dir_ = os.path.join(save_change_map_dir, 'epoch_' + str(epoch))
+    
+    #save_change_map_dir_ = os.path.join(save_change_map_dir, 'epoch_' + str(epoch))
+    save_change_map_dir_ = save_change_map_dir
     check_dir(save_change_map_dir_)
     save_change_map_dir_layer = os.path.join(save_change_map_dir_,layer_flag)
     check_dir(save_change_map_dir_layer)
     save_weight_fig_dir = os.path.join(save_change_map_dir_layer, str(filename).split('/')[-1] + '.jpg')
     real_file_name=os.path.join('/home/lorant/Projects/data/SceneChangeDet/cd2014/dataset/',filename)
 
-    if False:#(layer_flag=="conv5"):
+    if (layer_flag=="conv5"):
         cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
         print(filename)
         t0dir = os.path.join(cfg.VAL_DATA_PATH,str(filename).split('/')[0],str(filename).split('/')[1],'t0')
@@ -142,7 +146,7 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
 
         saveimg=np.hstack((t0img,t1img))
         saveimg=np.vstack((saveimg,np.hstack((gtimg*255, predimg))))
-        cv2.imwrite(os.path.join(valid_path,str(filename).split('/')[0]+"-"+str(filename).split('/')[1]+"-"+str(filename).split('/')[-1].replace("jpg","png")),saveimg)
+        cv2.imwrite(os.path.join(save_change_map_dir_,str(filename).split('/')[0]+"-"+str(filename).split('/')[1]+"-"+str(filename).split('/')[-1].replace("jpg","png")),saveimg)
 
     #shutil.copy(real_file_name,valid_path+'/'+str(filename).split('/')[-1])
     #print "dealed"+filename
@@ -184,6 +188,8 @@ def validate(net, val_dataloader,epoch,save_change_map_dir,save_roc_dir):
         metric_for_conditions[0]['total_negnum'] += negNum
         cont_conv5_mean, cont_fc_mean,cont_embedding_mean = cont_conv5_total/num, \
                                                                             cont_fc_total/num,cont_embedding_total/num
+        if (batch_idx) % 50 == 0:
+            print(batch_idx)
 
     thresh = np.array(range(0, 256)) / 255.0
     conds = metric_for_conditions.keys()
@@ -216,6 +222,7 @@ def validate(net, val_dataloader,epoch,save_change_map_dir,save_roc_dir):
     return f_score_total/len(conds)
 
 def main():
+  writer = SummaryWriter()
 
   #########  configs ###########
   best_metric = 0
@@ -231,11 +238,14 @@ def main():
                                 transform_med = train_transform_det)
   train_loader = Data.DataLoader(train_data,batch_size=cfg.BATCH_SIZE,
                                  shuffle= True, num_workers= 4, pin_memory= True)
+  print("Train loader ready")
   val_data = dates.Dataset(cfg.VAL_DATA_PATH,cfg.VAL_LABEL_PATH,
                             cfg.VAL_TXT_PATH,'val',transform=True,
                             transform_med = val_transform_det)
   val_loader = Data.DataLoader(val_data, batch_size= cfg.BATCH_SIZE,
                                 shuffle= False, num_workers= 4, pin_memory= True)
+  print("Val loader ready")
+
   ######  build  models ########
   base_seg_model = 'deeplab'
   if base_seg_model == 'deeplab':
@@ -282,9 +292,13 @@ def main():
           {'params':set_10x_learning_rate_for_multi_layer(model),'lr':10 * cfg.INIT_LEARNING_RATE},
           {'params':set_20x_learning_rate_for_multi_layer(model),'lr': 20 * cfg.INIT_LEARNING_RATE,'weight_decay':0}
       ],lr=cfg.INIT_LEARNING_RATE,momentum=cfg.MOMENTUM,weight_decay=cfg.DECAY)
+  print("Optimizer ready")
   ######## iter img_label pairs ###########
   loss_total = 0
-  for epoch in range(100):
+  print("Training start")
+  for epoch in range(trainEpochCount):
+      t1 = datetime.now()
+      running_loss = 0
       for batch_idx, batch in enumerate(train_loader):
              step = epoch * len(train_loader) + batch_idx
              util.adjust_learning_rate(cfg.INIT_LEARNING_RATE, optimizer, step)
@@ -306,10 +320,15 @@ def main():
              optimizer.zero_grad()
              loss.backward()
              optimizer.step()
+             
+             running_loss += loss.data[0]
              if (batch_idx) % 20 == 0:
-                print("Epoch [%d/%d] Loss: %.4f Mask_Loss_conv5: %.4f Mask_Loss_fc: %.4f "
-                      "Mask_Loss_embedding: %.4f" % (epoch, batch_idx,loss.data[0],contractive_loss_conv5.data[0],
+                print("Epoch [%d/%d]\tLoss: %.4f\tMask_Loss_conv5: %.4f\tMask_Loss_fc: %.4f "
+                      "\tMask_Loss_embedding: %.4f" % (epoch, batch_idx,loss.data[0],contractive_loss_conv5.data[0],
                                                      contractive_loss_fc.data[0],contractive_loss_embedding.data[0]))
+                writer.add_scalar('batch_idx/loss_train', loss.data[0], batch_idx)
+
+             """
              if (batch_idx) % 1000 == 1:
                  model.eval()
                  current_metric = validate(model, val_loader, epoch,save_change_map_dir,save_roc_dir)
@@ -319,6 +338,16 @@ def main():
                      shutil.copy(os.path.join(ab_test_dir, 'model' + str(epoch) + '.pth'),
                               os.path.join(ab_test_dir, 'model_best.pth'))
                      best_metric = current_metric
+             """
+
+      epoch_loss = running_loss / len(train_loader)
+      writer.add_scalar('epoch/loss_train', epoch_loss, epoch)
+      model.eval()
+      save_change_map_dir = os.path.join(save_change_map_dir, 'epoch_' + str(epoch))
+      current_metric = validate(model, val_loader, epoch,save_change_map_dir,save_roc_dir)
+
+
+      """
       current_metric = validate(model, val_loader, epoch,save_change_map_dir,save_roc_dir)
       if current_metric > best_metric:
          torch.save({'state_dict': model.state_dict()},
@@ -326,10 +355,11 @@ def main():
          shutil.copy(os.path.join(ab_test_dir, 'model' + str(epoch) + '.pth'),
                      os.path.join(ab_test_dir, 'model_best.pth'))
          best_metric = current_metric
-      if epoch % 5 == 0:
-          torch.save({'state_dict': model.state_dict()},
-                       os.path.join(ab_test_dir, 'model' + str(epoch) + '.pth'))
-
+      """
+      #if epoch % 5 == 0:
+      torch.save({'state_dict': model.state_dict()},
+                os.path.join(ab_test_dir, 'model' + str(epoch) + '.pth'))
+      print("Epoch time: "+str(datetime.now() - t1))
 
 
 def test_main():
