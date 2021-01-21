@@ -12,3 +12,6 @@ pip install opencv-python==4.2.0.32
 pip install matplotlib
 pip install scipy
 pip install pathlib
+
+pip install tensorboardX
+pip install crc32c
