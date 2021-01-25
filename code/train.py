@@ -151,7 +151,7 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
         cv2.imwrite(os.path.join(save_change_map_dir_,str(filename).split('/')[0]+"-"+str(filename).split('/')[1]+"-"+str(filename).split('/')[-1].replace("jpg","png")),saveimg)
     """
     #Own data
-    if (layer_flag=="embedding"):
+    if True:#(layer_flag=="out_conv5"):
         cv2.imwrite(save_weight_fig_dir, similar_dis_map_colorize)
         print(filename)
         t0img = cv2.imread(os.path.join(cfg.VAL_DATA_PATH,filename.replace('t0',"t1")))
@@ -163,7 +163,7 @@ def single_layer_similar_heatmap_visual(output_t0,output_t1,save_change_map_dir,
 
         saveimg=np.hstack((t0img,t1img))
         saveimg=np.vstack((saveimg,np.hstack((gtimg, predimg))))
-        cv2.imwrite(os.path.join(save_change_map_dir_,str(filename).split('/')[0]+"-"+str(filename).split('/')[1]+"-"+str(filename).split('/')[-1]),saveimg)
+        cv2.imwrite(os.path.join(save_change_map_dir_,str(filename).split('/')[0]+"-"+str(filename).split('/')[1]+"-"+layer_flag+"-"+str(filename).split('/')[-1]),saveimg)
 
     #shutil.copy(real_file_name,valid_path+'/'+str(filename).split('/')[-1])
     #print "dealed"+filename
@@ -287,13 +287,12 @@ def main():
       else:
           vgg_pretrain_model = util.load_pretrain_model(pretrain_vgg_path)
           model.init_parameters(vgg_pretrain_model)
-
   t1 = datetime.now()
   print("Model loading start at "+str(t1))
   model = model.cuda()
   print("Model loaded in "+str(datetime.now() - t1))
-  MaskLoss = ls.ConstractiveMaskLoss()
-  ab_test_dir = os.path.join(cfg.SAVE_PRED_PATH,'contrastive_loss')
+  MaskLoss = ls.ConstractiveMaskLoss(thresh_flag=True)
+  ab_test_dir = os.path.join(cfg.SAVE_PRED_PATH,'ConstractiveThresholdHingeLoss')
   check_dir(ab_test_dir)
   save_change_map_dir = os.path.join(ab_test_dir, 'changemaps/')
   save_valid_dir = os.path.join(ab_test_dir,'valid_imgs')
@@ -341,11 +340,14 @@ def main():
              optimizer.step()
              
              running_loss += loss.data[0]
-             if (batch_idx) % 20 == 0:
+             if (batch_idx) % 50 == 0:
                 print("Epoch [%d/%d]\tLoss: %.4f\tMask_Loss_conv5: %.4f\tMask_Loss_fc: %.4f "
                       "\tMask_Loss_embedding: %.4f" % (epoch, batch_idx,loss.data[0],contractive_loss_conv5.data[0],
                                                      contractive_loss_fc.data[0],contractive_loss_embedding.data[0]))
-                writer.add_scalar('batch_idx/loss_train', loss.data[0], batch_idx)
+                writer.add_scalar('step/loss_train', loss.data[0], step)
+                writer.add_scalar('step/contractive_loss_conv5', contractive_loss_conv5.data[0], step)
+                writer.add_scalar('step/contractive_loss_fc', contractive_loss_fc.data[0], step)
+                writer.add_scalar('step/contractive_loss_embedding', contractive_loss_embedding.data[0], step)
 
              """
              if (batch_idx) % 1000 == 1:
@@ -391,12 +393,18 @@ def test_main():
 
   TEST_TXT_PATH= '/home/lorant/Projects/data/SceneChangeDet/cd2014/test.txt'
 
+  val_data = dates.Dataset(cfg.TRAIN_DATA_PATH,cfg.TRAIN_LABEL_PATH,
+                                cfg.TRAIN_TXT_PATH,'val',transform=True,
+                                transform_med = val_transform_det)
+
   val_data = dates.Dataset(cfg.VAL_DATA_PATH,cfg.VAL_LABEL_PATH,
                             cfg.VAL_TXT_PATH,'val',transform=True,
                             transform_med = val_transform_det)
+
   val_data = dates.Dataset(cfg.TEST_DATA_PATH,cfg.TEST_LABEL_PATH,
                             cfg.TEST_TXT_PATH,'val',transform=True,
                             transform_med = val_transform_det)
+
   val_loader = Data.DataLoader(val_data, batch_size= cfg.BATCH_SIZE,
                                 shuffle= False, num_workers= 4, pin_memory= True)
   t1 = datetime.now()
