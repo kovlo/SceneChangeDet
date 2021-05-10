@@ -1,5 +1,5 @@
-conda create --name cikk1 python=2
-conda activate cikk1
+conda create --name SceneChangeDet python=2
+conda activate SceneChangeDet
 
 pip install --upgrade pip
 pip install --upgrade Pillow
