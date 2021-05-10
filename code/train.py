@@ -183,6 +183,7 @@ def validate(net, val_dataloader,epoch,save_change_map_dir,save_roc_dir):
         inputs1,input2,targets = inputs1.cuda(),input2.cuda(), targets.cuda()
         inputs1,inputs2,targets = Variable(inputs1, volatile=True),Variable(input2,volatile=True) ,Variable(targets)
         out_conv5,out_fc,out_embedding = net(inputs1,inputs2)
+        print(filename)
         out_conv5_t0, out_conv5_t1 = out_conv5
         out_fc_t0,out_fc_t1 = out_fc
         out_embedding_t0,out_embedding_t1 = out_embedding
@@ -262,6 +263,12 @@ def main():
   val_loader = Data.DataLoader(val_data, batch_size= cfg.BATCH_SIZE,
                                 shuffle= False, num_workers= 4, pin_memory= True)
   print("Val loader ready")
+  
+  TEST_TXT_PATH= '/home/lorant/Projects/data/cikk1/cd2014/test.txt'
+  test_data = dates.Dataset(cfg.VAL_DATA_PATH,cfg.VAL_LABEL_PATH,
+                            TEST_TXT_PATH,'val',transform=False)
+  test_dataloader = Data.DataLoader(test_data, batch_size= cfg.BATCH_SIZE,
+                                shuffle= False, num_workers= 1, pin_memory= True)
 
   ######  build  models ########
   base_seg_model = 'deeplab'
@@ -293,11 +300,18 @@ def main():
   print("Model loaded in "+str(datetime.now() - t1))
   MaskLoss = ls.ConstractiveMaskLoss(thresh_flag=True)
   ab_test_dir = os.path.join(cfg.SAVE_PRED_PATH,'ConstractiveThresholdHingeLoss')
+           
+  MaskLoss = ls.ConstractiveMaskLoss()
+  ab_test_dir = os.path.join(cfg.SAVE_PRED_PATH,'contrastive_loss')
   check_dir(ab_test_dir)
   save_change_map_dir = os.path.join(ab_test_dir, 'changemaps/')
   save_valid_dir = os.path.join(ab_test_dir,'valid_imgs')
   save_roc_dir = os.path.join(ab_test_dir,'roc')
   check_dir(save_change_map_dir),check_dir(save_valid_dir),check_dir(save_roc_dir)
+  model.train()
+  model.eval()
+  current_metric = validate(model, test_dataloader, 1,save_change_map_dir,save_roc_dir)
+
   #########
   ######### optimizer ##########
   ######## how to set different learning rate for differernt layers #########
@@ -351,6 +365,11 @@ def main():
 
              """
              if (batch_idx) % 1000 == 1:
+             if (batch_idx) % 20 == 1:
+                print("Epoch [%d/%d] Loss: %.4f Mask_Loss_conv5: %.4f Mask_Loss_fc: %.4f "
+                      "Mask_Loss_embedding: %.4f" % (epoch, batch_idx,loss.data[0],contractive_loss_conv5.data[0],
+                                                     contractive_loss_fc.data[0],contractive_loss_embedding.data[0]))
+             if (batch_idx) % 1 == 0:
                  model.eval()
                  current_metric = validate(model, val_loader, epoch,save_change_map_dir,save_roc_dir)
                  if current_metric > best_metric:
