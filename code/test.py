@@ -1,7 +1,7 @@
 from train import *
 
 
-TEST_TXT_PATH= '/home/lorant/Projects/data/cikk1/cd2014/test.txt'
+TEST_TXT_PATH= '/home/lorant/Projects/data/SceneChangeDet/cd2014/test.txt'
 
 test_data = dates.Dataset(cfg.VAL_DATA_PATH,cfg.VAL_LABEL_PATH,
                             TEST_TXT_PATH,'val',transform=False)
